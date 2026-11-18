@@ -1,0 +1,1322 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  catalog/
+    page.tsx
+  rooms/
+    [id]/
+      page.tsx
+  favicon.ico
+  globals.css
+  layout.tsx
+  page.tsx
+components/
+  .gitkeep
+  AmenitiesGrid.tsx
+  BookingCard.tsx
+  CatalogHeader.tsx
+  CategoryFilter.tsx
+  HostInfo.tsx
+  MapPlaceholder.tsx
+  Navbar.tsx
+  PhotoGallery.tsx
+  PropertyCard.tsx
+  RoomHeader.tsx
+data/
+  properties.ts
+public/
+  file.svg
+  globe.svg
+  next.svg
+  vercel.svg
+  window.svg
+types/
+  property.ts
+.gitignore
+AGENTS.md
+context.md
+eslint.config.mjs
+next.config.ts
+package.json
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/catalog/page.tsx">
+"use client";
+
+import { useState } from "react";
+import { CatalogHeader } from "@/components/CatalogHeader";
+import { MapPlaceholder } from "@/components/MapPlaceholder";
+import { Navbar } from "@/components/Navbar";
+import { PropertyCard } from "@/components/PropertyCard";
+import { PROPERTIES } from "@/data/properties";
+
+const CatalogPage = () => {
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const sortedProperties = [...PROPERTIES].sort((a, b) => {
+    if (sortOrder === "asc") {
+      return a.pricePerNight - b.pricePerNight;
+    } else {
+      return b.pricePerNight - a.pricePerNight;
+    }
+  });
+
+  return (
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+      <Navbar />
+
+      <main className="mx-auto max-w-7xl flex-1 px-4 py-6 md:px-8 w-full">
+        <CatalogHeader
+          totalResults={sortedProperties.length}
+          sortOrder={sortOrder}
+          onSortChange={setSortOrder}
+        />
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+          {/* Listado de tarjetas de alojamiento */}
+          <div className="lg:col-span-7 xl:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {sortedProperties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+
+          {/* Área de mapa (debajo en móvil, derecha fija en escritorio) */}
+          <div className="lg:col-span-5 xl:col-span-5 w-full">
+            <MapPlaceholder properties={sortedProperties} />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+export default CatalogPage;
+</file>
+
+<file path="app/rooms/[id]/page.tsx">
+"use client";
+
+import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Navbar } from "@/components/Navbar";
+import { PhotoGallery } from "@/components/PhotoGallery";
+import { RoomHeader } from "@/components/RoomHeader";
+import { HostInfo } from "@/components/HostInfo";
+import { AmenitiesGrid } from "@/components/AmenitiesGrid";
+import { BookingCard } from "@/components/BookingCard";
+import { PROPERTIES } from "@/data/properties";
+import { Property } from "@/types/property";
+
+function RoomDetailContent() {
+  const params = useParams();
+  const roomId = params?.id as string;
+
+  const [property, setProperty] = useState<Property | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const found = PROPERTIES.find((p) => p.id === roomId) || PROPERTIES[0];
+      setProperty(found);
+      setIsLoading(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [roomId]);
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-5xl flex-1 px-4 py-12 w-full animate-pulse space-y-6">
+        <div className="h-8 w-1/3 rounded bg-zinc-200" />
+        <div className="aspect-[21/9] w-full rounded-2xl bg-zinc-200" />
+        <div className="h-6 w-1/2 rounded bg-zinc-200" />
+      </main>
+    );
+  }
+
+  if (!property) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+        <p className="text-lg font-semibold text-zinc-800">Alojamiento no encontrado.</p>
+        <Link href="/catalog" className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white">
+          Volver al catálogo
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-6xl flex-1 px-4 py-6 md:px-8 w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <Link
+          href="/catalog"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-700 hover:text-zinc-900"
+        >
+          ← Volver a resultados
+        </Link>
+      </div>
+
+      <PhotoGallery images={property.images} title={property.title} />
+
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 items-start pt-2">
+        <div className="lg:col-span-7 space-y-6">
+          <RoomHeader
+            location={property.location}
+            rating={property.rating}
+            reviewsCount={property.reviewsCount}
+          />
+          <HostInfo
+            hostName={property.hostName}
+            hostYears={property.hostYears}
+            hostAvatar={property.hostAvatar}
+            description={property.description}
+          />
+          <AmenitiesGrid amenities={property.amenities} />
+        </div>
+
+        <div className="lg:col-span-5">
+          <BookingCard
+            pricePerNight={property.pricePerNight}
+            maxGuests={property.maxGuests}
+            rating={property.rating}
+            reviewsCount={property.reviewsCount}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+const RoomDetailPage = () => {
+  return (
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+      <Navbar />
+      <Suspense fallback={<div className="p-12 text-center">Cargando detalles...</div>}>
+        <RoomDetailContent />
+      </Suspense>
+    </div>
+  );
+};
+export default RoomDetailPage;
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Airbnb Clone",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html
+      lang="es"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+</file>
+
+<file path="app/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { Navbar } from "@/components/Navbar";
+import { PropertyCard } from "@/components/PropertyCard";
+import { CATEGORIES, PROPERTIES } from "@/data/properties";
+import { Property } from "@/types/property";
+
+const HomePage = () => {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeCategory, setActiveCategory] = useState<string>("Todo");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProperties(PROPERTIES);
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const filteredProperties = properties.filter((item) => {
+    const matchesCategory =
+      activeCategory === "Todo" || item.category === activeCategory;
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      item.title.toLowerCase().includes(query) ||
+      item.location.toLowerCase().includes(query);
+
+    return matchesCategory && matchesSearch;
+  });
+
+  return (
+    <div className="min-h-screen bg-white text-zinc-900">
+      <Navbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        showSearchInput
+      />
+
+      <CategoryFilter
+        categories={CATEGORIES}
+        activeCategory={activeCategory}
+        onSelectCategory={setActiveCategory}
+      />
+
+      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8">
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((skeleton) => (
+              <div key={skeleton} className="animate-pulse space-y-3">
+                <div className="aspect-square w-full rounded-xl bg-zinc-200" />
+                <div className="h-4 w-3/4 rounded bg-zinc-200" />
+                <div className="h-4 w-1/2 rounded bg-zinc-200" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProperties.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-base font-medium text-zinc-700">
+              No encontramos alojamientos con esos filtros.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveCategory("Todo");
+              }}
+              className="mt-3 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredProperties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+export default HomePage;
+</file>
+
+<file path="components/.gitkeep">
+
+</file>
+
+<file path="components/AmenitiesGrid.tsx">
+import { Amenity } from "@/types/property";
+
+interface AmenitiesGridProps {
+  amenities: Amenity[];
+}
+
+export const AmenitiesGrid = ({ amenities }: AmenitiesGridProps) => {
+  return (
+    <div className="border-b border-zinc-200 py-6">
+      <h3 className="mb-4 text-lg font-semibold text-zinc-900">Lo que este lugar ofrece</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {amenities.map((amenity, idx) => (
+          <div key={idx} className="flex items-center gap-3 text-sm text-zinc-700">
+            <span className="text-xl">{amenity.icon}</span>
+            <span>{amenity.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="components/BookingCard.tsx">
+"use client";
+
+import { useState } from "react";
+
+interface BookingCardProps {
+  pricePerNight: number;
+  maxGuests: number;
+  rating: number;
+  reviewsCount: number;
+}
+
+export const BookingCard = ({
+  pricePerNight,
+  maxGuests,
+  rating,
+  reviewsCount,
+}: BookingCardProps) => {
+  const [guests, setGuests] = useState<number>(2);
+  const nights = 2; // Simulación estándar de 2 noches como en tus capturas
+  const totalPrice = pricePerNight * nights;
+
+  const handleDecrease = () => {
+    if (guests > 1) setGuests(guests - 1);
+  };
+
+  const handleIncrease = () => {
+    if (guests < maxGuests) setGuests(guests + 1);
+  };
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl sticky top-24">
+      <div className="flex items-baseline justify-between mb-4">
+        <div>
+          <span className="text-2xl font-bold text-zinc-900">${pricePerNight} USD</span>
+          <span className="text-sm text-zinc-500"> noche</span>
+        </div>
+        <div className="text-xs font-semibold text-zinc-700">
+          ★ {rating} · <span className="underline">{reviewsCount} reseñas</span>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded-xl border border-zinc-300 p-3">
+        <div className="flex items-center justify-between text-xs font-bold text-zinc-800 uppercase">
+          <span>Huéspedes</span>
+          <span>Máx. {maxGuests}</span>
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-sm text-zinc-600">{guests} huéspedes</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleDecrease}
+              disabled={guests <= 1}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 text-zinc-700 disabled:opacity-40"
+            >
+              -
+            </button>
+            <span className="text-sm font-semibold">{guests}</span>
+            <button
+              type="button"
+              onClick={handleIncrease}
+              disabled={guests >= maxGuests}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 text-zinc-700 disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => alert(`¡Reserva solicitada con éxito para ${guests} huéspedes!`)}
+        className="w-full rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 py-3.5 text-center text-sm font-bold text-white shadow-md transition hover:opacity-95"
+      >
+        Reservar
+      </button>
+
+      <p className="mt-3 text-center text-xs text-zinc-500">No se te cargará ningún monto por ahora</p>
+
+      <div className="mt-4 space-y-2 border-t border-zinc-200 pt-4 text-sm text-zinc-600">
+        <div className="flex justify-between">
+          <span className="underline">${pricePerNight} USD x {nights} noches</span>
+          <span>${totalPrice} USD</span>
+        </div>
+        <div className="flex justify-between font-bold text-zinc-900 pt-2 border-t border-zinc-100">
+          <span>Total antes de impuestos</span>
+          <span>${totalPrice} USD</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="components/CatalogHeader.tsx">
+interface CatalogHeaderProps {
+  totalResults: number;
+  sortOrder: "asc" | "desc";
+  onSortChange: (order: "asc" | "desc") => void;
+}
+
+export const CatalogHeader = ({
+  totalResults,
+  sortOrder,
+  onSortChange,
+}: CatalogHeaderProps) => {
+  return (
+    <div className="flex flex-col gap-4 border-b border-zinc-200 pb-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm text-zinc-500">Más de {totalResults} alojamientos disponibles</p>
+        <h1 className="text-xl font-bold text-zinc-900">Alojamientos en esta zona del mapa</h1>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <label htmlFor="sort-select" className="text-sm font-medium text-zinc-700">
+          Ordenar por precio:
+        </label>
+        <select
+          id="sort-select"
+          value={sortOrder}
+          onChange={(e) => onSortChange(e.target.value as "asc" | "desc")}
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none focus:border-rose-500"
+        >
+          <option value="asc">Menor a mayor ($)</option>
+          <option value="desc">Mayor a menor ($)</option>
+        </select>
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="components/CategoryFilter.tsx">
+import { Category } from "@/types/property";
+
+interface CategoryFilterProps {
+  categories: Category[];
+  activeCategory: string;
+  onSelectCategory: (categoryId: string) => void;
+}
+
+export const CategoryFilter = ({
+  categories,
+  activeCategory,
+  onSelectCategory,
+}: CategoryFilterProps) => {
+  return (
+    <div className="border-b border-zinc-200 bg-white">
+      <div className="mx-auto flex max-w-7xl gap-8 overflow-x-auto px-4 py-3 md:justify-center md:px-8 md:overflow-x-visible">
+        {categories.map((category) => {
+          const isActive = activeCategory === category.id;
+          return (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onSelectCategory(category.id)}
+              className={`flex shrink-0 flex-col items-center justify-center gap-1.5 border-b-2 pb-2 text-xs font-medium transition ${
+                isActive
+                  ? "border-zinc-900 text-zinc-950"
+                  : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"
+              }`}
+            >
+              <span className="text-2xl flex items-center justify-center">{category.icon}</span>
+              <span>{category.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="components/HostInfo.tsx">
+interface HostInfoProps {
+  hostName: string;
+  hostYears: number;
+  hostAvatar: string;
+  description: string;
+}
+
+export const HostInfo = ({ hostName, hostYears, hostAvatar, description }: HostInfoProps) => {
+  return (
+    <div className="flex flex-col gap-6 border-b border-zinc-200 py-6">
+      <div className="flex items-center gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-500 text-lg font-bold text-white shadow-sm">
+          {hostAvatar}
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900">Anfitrión: {hostName}</h2>
+          <p className="text-sm text-zinc-500">{hostYears} años como anfitrión en Airbnb</p>
+        </div>
+      </div>
+      <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
+    </div>
+  );
+};
+</file>
+
+<file path="components/MapPlaceholder.tsx">
+import Link from "next/link";
+import { Property } from "@/types/property";
+
+interface MapPlaceholderProps {
+  properties: Property[];
+}
+
+const PIN_POSITIONS = [
+  "top-[18%] left-[15%]",
+  "top-[32%] left-[52%]",
+  "top-[48%] left-[24%]",
+  "top-[62%] left-[60%]",
+  "top-[22%] left-[68%]",
+  "top-[70%] left-[20%]",
+];
+
+export const MapPlaceholder = ({ properties }: MapPlaceholderProps) => {
+  return (
+    <div className="relative h-[300px] w-full overflow-hidden rounded-2xl border border-zinc-300 bg-zinc-200 md:sticky md:top-24 md:h-[calc(100vh-140px)]">
+      <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-70" />
+
+      <div className="pointer-events-none absolute inset-0 p-6">
+        {properties.map((property, idx) => (
+          <Link
+            key={property.id}
+            href={`/rooms/${property.id}`}
+            className={`pointer-events-auto absolute flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-bold text-zinc-900 shadow-lg transition hover:scale-110 hover:border-rose-500 ${
+              PIN_POSITIONS[idx % PIN_POSITIONS.length]
+            }`}
+          >
+            <span>📍</span>
+            <span>${property.pricePerNight} USD</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="absolute bottom-4 left-4 rounded-xl bg-white/95 px-4 py-2 shadow-md backdrop-blur">
+        <p className="text-xs font-bold text-zinc-900">Mapa interactivo de la zona</p>
+        <p className="text-[11px] text-zinc-500">
+          Haz clic en cualquier precio para ver el alojamiento
+        </p>
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="components/Navbar.tsx">
+import Link from "next/link";
+
+interface NavbarProps {
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+  showSearchInput?: boolean;
+}
+
+export const Navbar = ({
+  searchQuery = "",
+  onSearchChange,
+  showSearchInput = false,
+}: NavbarProps) => {
+  return (
+    <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-rose-500">
+            <span className="text-3xl flex items-center">⌂</span>
+            <span>airbnb</span>
+          </Link>
+          <div className="flex items-center gap-3 md:hidden">
+            <Link href="/catalog" className="text-xs font-semibold text-zinc-700 hover:underline">
+              Explorar catálogo
+            </Link>
+          </div>
+        </div>
+
+        {showSearchInput && onSearchChange && (
+          <div className="w-full md:max-w-md">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Buscar destino o alojamiento..."
+              className="w-full rounded-full border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-rose-500 focus:bg-white"
+            />
+          </div>
+        )}
+
+        <nav className="hidden items-center gap-4 md:flex">
+          <Link
+            href="/catalog"
+            className="rounded-full px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
+          >
+            Ver catálogo completo
+          </Link>
+          <div className="flex items-center gap-2 rounded-full border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 shadow-sm">
+            <span>☰</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-xs text-white">
+              U
+            </span>
+          </div>
+        </nav>
+      </div>
+    </header>
+  );
+};
+</file>
+
+<file path="components/PhotoGallery.tsx">
+"use client";
+
+import { useState } from "react";
+
+interface PhotoGalleryProps {
+  images: string[];
+  title: string;
+}
+
+export const PhotoGallery = ({ images, title }: PhotoGalleryProps) => {
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  return (
+    <div className="space-y-3">
+      <h1 className="text-2xl font-bold text-zinc-900 md:text-3xl">{title}</h1>
+
+      <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-zinc-200 md:aspect-[21/9]">
+        <img
+          src={images[currentIndex]}
+          alt={`${title} - Foto ${currentIndex + 1}`}
+          className="h-full w-full object-cover transition duration-300"
+        />
+
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-zinc-900 shadow-md hover:bg-white"
+            >
+              ❮
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-zinc-900 shadow-md hover:bg-white"
+            >
+              ❯
+            </button>
+            <div className="absolute bottom-4 right-4 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
+              {currentIndex + 1} / {images.length}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="components/PropertyCard.tsx">
+import Link from "next/link";
+import { Property } from "@/types/property";
+
+interface PropertyCardProps {
+  property: Property;
+}
+
+export const PropertyCard = ({ property }: PropertyCardProps) => {
+  return (
+    <Link href={`/rooms/${property.id}`} className="group block">
+      <article className="flex flex-col gap-2">
+        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-zinc-200">
+          <img
+            src={property.images[0]}
+            alt={property.title}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+          />
+          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-zinc-800 shadow-sm">
+            Favorito entre huéspedes
+          </span>
+        </div>
+
+        <div className="flex items-start justify-between gap-2 pt-1">
+          <h3 className="line-clamp-1 text-sm font-semibold text-zinc-900">
+            {property.location}
+          </h3>
+          <span className="shrink-0 text-sm font-medium text-zinc-900">
+            ★ {property.rating.toFixed(2)}
+          </span>
+        </div>
+
+        <p className="line-clamp-1 text-sm text-zinc-500">{property.title}</p>
+        <p className="text-xs text-zinc-400">{property.category}</p>
+
+        <p className="pt-0.5 text-sm text-zinc-900">
+          <span className="font-semibold">${property.pricePerNight} USD</span>{" "}
+          <span className="text-zinc-600">noche</span>
+        </p>
+      </article>
+    </Link>
+  );
+};
+</file>
+
+<file path="components/RoomHeader.tsx">
+interface RoomHeaderProps {
+  location: string;
+  rating: number;
+  reviewsCount: number;
+}
+
+export const RoomHeader = ({ location, rating, reviewsCount }: RoomHeaderProps) => {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-4">
+      <p className="text-base font-semibold text-zinc-900 underline">{location}</p>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="font-semibold text-zinc-900">★ {rating.toFixed(2)}</span>
+        <span className="text-zinc-400">·</span>
+        <span className="font-semibold text-zinc-900 underline">{reviewsCount} reseñas</span>
+      </div>
+    </div>
+  );
+};
+</file>
+
+<file path="data/properties.ts">
+import { Category, Property } from "@/types/property";
+
+export const CATEGORIES: Category[] = [
+  { id: "Todo", label: "Todo", icon: "🌍" },
+  { id: "Playa", label: "Playa", icon: "🏖️" },
+  { id: "Ciudad", label: "Ciudad", icon: "🏙️" },
+  { id: "Mansiones", label: "Mansiones", icon: "🏛️" },
+  { id: "Tendencias", label: "Tendencias", icon: "🔥" },
+  { id: "Piscinas", label: "Piscinas", icon: "🏊" },
+];
+
+export const PROPERTIES: Property[] = [
+  {
+    id: "1",
+    title: "Apartamento con piscina en Higuerote",
+    location: "Higuerote, Miranda",
+    category: "Playa",
+    pricePerNight: 69,
+    rating: 4.95,
+    reviewsCount: 128,
+    images: [
+      "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=900&q=80",
+    ],
+    hostName: "Carlos Méndez",
+    hostYears: 5,
+    hostAvatar: "CM",
+    maxGuests: 6,
+    description: "Apartamento vacacional frente a los canales con piscina amplia, terraza soleada y acceso a embarcaderos locales.",
+    amenities: [
+      { icon: "🏊", label: "Piscina compartida" },
+      { icon: "📶", label: "Wifi de alta velocidad" },
+      { icon: "❄️", label: "Aire acondicionado" },
+      { icon: "🚗", label: "Estacionamiento gratis" },
+      { icon: "🍳", label: "Cocina equipada" },
+      { icon: "🌴", label: "Acceso a la playa" },
+    ],
+  },
+  {
+    id: "2",
+    title: "Cómoda habitación con baño privado",
+    location: "Caracas, Distrito Capital",
+    category: "Ciudad",
+    pricePerNight: 30,
+    rating: 4.95,
+    reviewsCount: 455,
+    images: [
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+    ],
+    hostName: "Elena Rodríguez",
+    hostYears: 7,
+    hostAvatar: "ER",
+    maxGuests: 2,
+    description: "Habitación iluminada y silenciosa en zona residencial segura de Caracas, ideal para viajes de negocios o descanso.",
+    amenities: [
+      { icon: "📶", label: "Wifi rápido" },
+      { icon: "💻", label: "Zona de trabajo" },
+      { icon: "🚿", label: "Baño privado" },
+      { icon: "📺", label: "TV con streaming" },
+      { icon: "🧺", label: "Lavadora y secadora" },
+      { icon: "🔑", label: "Llegada autónoma" },
+    ],
+  },
+  {
+    id: "3",
+    title: "Hermoso apto con vista a El Ávila",
+    location: "Altamira, Caracas",
+    category: "Tendencias",
+    pricePerNight: 103,
+    rating: 4.9,
+    reviewsCount: 71,
+    images: [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80",
+    ],
+    hostName: "Andrés Silva",
+    hostYears: 4,
+    hostAvatar: "AS",
+    maxGuests: 4,
+    description: "Apartamento moderno en el corazón de Altamira con ventanales panorámicos hacia El Ávila y restaurantes a pocos pasos.",
+    amenities: [
+      { icon: "⛰️", label: "Vista a la montaña" },
+      { icon: "❄️", label: "Aire acondicionado" },
+      { icon: "📶", label: "Fibra óptica 300 Mbps" },
+      { icon: "🍳", label: "Cocina gourmet" },
+      { icon: "🚗", label: "Puesto de estacionamiento" },
+      { icon: "🛡️", label: "Vigilancia 24 horas" },
+    ],
+  },
+  {
+    id: "4",
+    title: "Casa de campo con piscina privada",
+    location: "Higuerote, Miranda",
+    category: "Mansiones",
+    pricePerNight: 124,
+    rating: 4.76,
+    reviewsCount: 54,
+    images: [
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80",
+    ],
+    hostName: "Mariana Gómez",
+    hostYears: 6,
+    hostAvatar: "MG",
+    maxGuests: 8,
+    description: "Amplia casa vacacional con parrillera, piscina privada y jardines tropicales pensada para grupos y familias.",
+    amenities: [
+      { icon: "🏊", label: "Piscina privada" },
+      { icon: "🍖", label: "Área de parrilla" },
+      { icon: "🚗", label: "Estacionamiento amplio" },
+      { icon: "❄️", label: "Climatización integral" },
+      { icon: "🐾", label: "Se permiten mascotas" },
+      { icon: "📶", label: "Wifi en toda la propiedad" },
+    ],
+  },
+  {
+    id: "5",
+    title: "Condo moderno frente al mar en Lechería",
+    location: "Puerto La Cruz, Anzoátegui",
+    category: "Piscinas",
+    pricePerNight: 84,
+    rating: 4.98,
+    reviewsCount: 92,
+    images: [
+      "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=900&q=80",
+    ],
+    hostName: "Valentina Rivas",
+    hostYears: 3,
+    hostAvatar: "VR",
+    maxGuests: 4,
+    description: "Condominio de lujo con acabados modernos, muelle propio y piscina infinita cerca de las mejores playas de Oriente.",
+    amenities: [
+      { icon: "🏊", label: "Piscina infinita" },
+      { icon: "⚓", label: "Muelle privado" },
+      { icon: "❄️", label: "Aire central" },
+      { icon: "🍳", label: "Cocina equipada" },
+      { icon: "📶", label: "Wifi de alta velocidad" },
+      { icon: "🏋️", label: "Gimnasio en el edificio" },
+    ],
+  },
+  {
+    id: "6",
+    title: "Acogedor y moderno apto piso 2",
+    location: "Chacao, Caracas",
+    category: "Ciudad",
+    pricePerNight: 110,
+    rating: 4.97,
+    reviewsCount: 30,
+    images: [
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
+    ],
+    hostName: "Gabriel Pérez",
+    hostYears: 8,
+    hostAvatar: "GP",
+    maxGuests: 5,
+    description: "Espacio recién remodelado en Chacao con dos habitaciones, excelente iluminación natural y acceso inmediato al transporte.",
+    amenities: [
+      { icon: "📶", label: "Wifi de fibra óptica" },
+      { icon: "❄️", label: "Aire acondicionado" },
+      { icon: "🧺", label: "Centro de lavado" },
+      { icon: "🍳", label: "Cocina completa" },
+      { icon: "🚗", label: "Estacionamiento techado" },
+      { icon: "💻", label: "Escritorio ergonómico" },
+    ],
+  },
+];
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path="types/property.ts">
+export interface Amenity {
+  icon: string;
+  label: string;
+}
+
+export interface Category {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+export interface Property {
+  id: string;
+  title: string;
+  location: string;
+  category: string;
+  pricePerNight: number;
+  rating: number;
+  reviewsCount: number;
+  images: string[];
+  hostName: string;
+  hostYears: number;
+  hostAvatar: string;
+  maxGuests: number;
+  description: string;
+  amenities: Amenity[];
+}
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="AGENTS.md">
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+</file>
+
+<file path="context.md">
+# Contexto del Proyecto: Clon de Airbnb
+
+## 1. Perfil del Usuario y Objetivo
+El usuario es un viajero que busca explorar, comparar y reservar alojamientos vacacionales o estancias cortas en destinos como Higuerote, Puerto La Cruz o Caracas desde su teléfono móvil (375px) o computadora de escritorio (768px+). Su objetivo es filtrar opciones por ubicación o categoría en tiempo real, comparar precios y ubicaciones en un catálogo ordenado, e inspeccionar las fotos, comodidades, datos del anfitrión y costos antes de confirmar su reserva con una navegación fluida sin recargas de página.
+
+## 2. Descripción de las Tres Vistas
+* **Página de Inicio (/)**: Muestra la barra de navegación superior con buscador en tiempo real, una fila horizontal de filtros por categoría (Playa, Mansiones, Tendencias, etc.) y una cuadrícula responsiva de tarjetas de alojamiento con simulación de carga inicial.
+* **Página de Catálogo (/catalog)**: Presenta los resultados de búsqueda con el conteo de alojamientos, un selector para ordenar por precio ascendente o descendente, la lista de tarjetas reutilizadas y un panel de mapa (a la derecha en escritorio y debajo en móvil).
+* **Página de Detalle de Habitación (/rooms/[id])**: Carga dinámicamente la información de un alojamiento específico mostrando un botón de regreso al catálogo, galería interactiva con controles Anterior/Siguiente, cabecera con título y ubicación, perfil del anfitrión, cuadrícula de servicios (amenities) y tarjeta de reserva con contador de huéspedes.
+
+## 3. Especificación de Componentes (Flujo de Visión)
+
+### Componentes Compartidos
+* **Navbar**
+  * **Props**: `searchQuery?: string`, `onSearchChange?: (value: string) => void`, `showSearchInput?: boolean`
+  * **Layout**: Cabecera fija superior con logo a la izquierda (enlace a inicio), barra de búsqueda central redondeada, enlace al catálogo y menú de usuario a la derecha.
+* **PropertyCard**
+  * **Props**: `property: Property`
+  * **Layout**: Tarjeta vertical envuelta en `<Link>` hacia el detalle, con contenedor de imagen de aspecto cuadrado, etiqueta de favorito, título, ubicación, categoría, valoración con estrella y precio por noche.
+
+### Componentes de la Página de Inicio (/)
+* **CategoryFilter**
+  * **Props**: `categories: Category[]`, `activeCategory: string`, `onSelectCategory: (id: string) => void`
+  * **Layout**: Fila horizontal con desplazamiento lateral debajo de la barra de navegación que resalta con borde inferior e intensidad visual la categoría activa.
+
+### Componentes de la Página de Catálogo (/catalog)
+* **CatalogHeader**
+  * **Props**: `totalResults: number`, `sortOrder: "asc" | "desc"`, `onSortChange: (order: "asc" | "desc") => void`
+  * **Layout**: Barra superior del listado con contador de resultados a la izquierda y control desplegable de ordenación de precios a la derecha.
+* **MapPlaceholder**
+  * **Props**: `properties: Property[]`
+  * **Layout**: Contenedor gris estilizado con pines de precio simulados; se ubica debajo de las tarjetas en móvil (375px) y fijo a la derecha ocupando la mitad de la vista en escritorio (768px+).
+
+### Componentes de la Vista de Detalle (/rooms/[id])
+* **PhotoGallery**
+  * **Props**: `images: string[]`, `title: string`
+  * **Layout**: Visor superior con imagen activa controlada por `useState`, indicador numérico de foto actual y botones flotantes Anterior / Siguiente.
+* **RoomHeader**
+  * **Props**: `title: string`, `rating: number`, `reviewsCount: number`, `location: string`
+  * **Layout**: Bloque superior debajo de la galería con título principal, estrella de valoración, cantidad de reseñas y ciudad.
+* **HostInfo**
+  * **Props**: `hostName: string`, `hostYears: number`, `hostAvatar: string`
+  * **Layout**: Fila horizontal con bordes divisorios que agrupa el avatar circular del anfitrión, su nombre y años de experiencia.
+* **AmenitiesGrid**
+  * **Props**: `amenities: Amenity[]`
+  * **Layout**: Cuadrícula de 1 columna en móvil y 2 columnas en escritorio con pares de icono y etiqueta descriptiva.
+* **BookingCard**
+  * **Props**: `pricePerNight: number`, `maxGuests: number`
+  * **Layout**: Tarjeta con borde y sombra que muestra el precio por noche, controles `+` y `-` con `useState` para ajustar huéspedes dentro del límite permitido, cálculo de total y botón CTA de reserva.
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  cacheComponents: true,
+  partialPrefetching: true,
+  turbopack: {
+    rules: {
+      "*.css": {
+        loaders: ["@tailwindcss/turbopack"],
+        as: "*.css",
+      },
+    },
+  },
+};
+
+export default nextConfig;
+</file>
+
+<file path="package.json">
+{
+  "name": "airbnb-clone",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path="README.md">
+# Airbnb
+
+Proyecto creado con Next.js 16, TypeScript, Tailwind CSS y App Router.
+
+## Desarrollo
+
+```bash
+npm run dev
+```
+
+La aplicación estará disponible en `http://localhost:3000`.
+
+Las rutas y páginas se organizan en `app/`; los componentes de interfaz reutilizables van en `components/`.
+</file>
+
+</files>
